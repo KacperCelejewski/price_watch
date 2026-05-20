@@ -99,6 +99,9 @@ def scrape_all_products() -> None:
 
 def start_scheduler() -> None:
     """Start the APScheduler background scheduler."""
+    from apscheduler.triggers.cron import CronTrigger
+    from app.ml.training import retrain_all_models_job
+
     scheduler.add_job(
         scrape_all_products,
         trigger=IntervalTrigger(hours=settings.scraper_interval_hours),
@@ -106,8 +109,21 @@ def start_scheduler() -> None:
         name="Scrape all product prices",
         replace_existing=True,
     )
+
+    # Retrain all ML models every day at 3 AM
+    scheduler.add_job(
+        retrain_all_models_job,
+        trigger=CronTrigger(hour=3, minute=0),
+        id="retrain_all_models",
+        name="Retrain price prediction models",
+        replace_existing=True,
+    )
+
     scheduler.start()
-    logger.info(f"Scheduler started — scraping every {settings.scraper_interval_hours} hours")
+    logger.info(
+        f"Scheduler started — scraping every {settings.scraper_interval_hours} hours, "
+        "retraining models daily at 03:00"
+    )
 
 
 def stop_scheduler() -> None:
