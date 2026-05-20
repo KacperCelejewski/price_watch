@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.database import SessionLocal
 from app.models.product import Product
 from app.models.price import PriceHistory
+from app.models.scraper_log import ScraperLog, ScraperStatus
 from app.scrapers.ceneo import CeneoScraper
 from app.scrapers.allegro import AllegroScraper
 from app.scrapers.generic import GenericScraper
@@ -29,6 +30,23 @@ def get_scraper_for_url(url: str):
         return GenericScraper()
 
 
+def _write_scraper_log(
+    db: Session, product_id: int, status: ScraperStatus, message: str
+) -> None:
+    try:
+        log = ScraperLog(
+            product_id=product_id,
+            status=status,
+            message=message,
+            scraped_at=datetime.utcnow(),
+        )
+        db.add(log)
+        db.commit()
+    except Exception as exc:
+        logger.warning(f"Could not write scraper log: {exc}")
+        db.rollback()
+
+
 def scrape_product(product: Product, db: Session) -> Optional[float]:
     """Scrape price for a single product and save to PriceHistory."""
     scraper = get_scraper_for_url(product.url)
@@ -44,13 +62,20 @@ def scrape_product(product: Product, db: Session) -> Optional[float]:
             db.add(record)
             db.commit()
             logger.info(f"Scraped price {price} PLN for product {product.id} ({product.name})")
+            _write_scraper_log(
+                db, product.id, ScraperStatus.success, f"Scraped price: {price} PLN"
+            )
             return price
         else:
+            msg = f"No price found on {product.url}"
             logger.warning(f"No price found for product {product.id} ({product.name})")
+            _write_scraper_log(db, product.id, ScraperStatus.error, msg)
             return None
     except Exception as exc:
+        msg = str(exc)
         logger.error(f"Error scraping product {product.id}: {exc}")
         db.rollback()
+        _write_scraper_log(db, product.id, ScraperStatus.error, msg)
         return None
     finally:
         scraper.close()

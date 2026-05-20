@@ -3,8 +3,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
+from app.core.logging import setup_logging
 from app.routers import products, prices, alerts, scraper
+from app.routers import predictions, recommendations, logs
 from app.scrapers.scheduler import start_scheduler, stop_scheduler
+
+setup_logging()
 
 
 @asynccontextmanager
@@ -35,6 +39,9 @@ app.include_router(products.router)
 app.include_router(prices.router)
 app.include_router(alerts.router)
 app.include_router(scraper.router)
+app.include_router(predictions.router)
+app.include_router(recommendations.router)
+app.include_router(logs.router)
 
 
 @app.get("/health")
