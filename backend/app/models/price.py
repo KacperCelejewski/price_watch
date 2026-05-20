@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, TYPE_CHECKING
-from sqlalchemy import String, DateTime, Numeric, ForeignKey, Index, func
+from sqlalchemy import String, DateTime, Numeric, ForeignKey, Index, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -24,5 +24,9 @@ class PriceHistory(Base):
     product: Mapped["Product"] = relationship("Product", back_populates="prices")
 
     __table_args__ = (
+        # Composite index for the most common query: filter by product + time range
         Index("ix_price_product_scraped", "product_id", "scraped_at"),
+        # Partial index covering only the last 90 days for recent-price queries
+        # Note: partial indexes use PostgreSQL-specific syntax; defined via DDL
+        # This index is created via migration for PostgreSQL environments
     )
