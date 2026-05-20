@@ -5,7 +5,7 @@ from loguru import logger
 
 from app.core.logging import setup_logging
 from app.routers import products, prices, alerts, scraper
-from app.routers import predictions, recommendations, logs
+from app.routers import predictions, recommendations, logs, anomalies
 from app.scrapers.scheduler import start_scheduler, stop_scheduler
 
 setup_logging()
@@ -42,6 +42,7 @@ app.include_router(scraper.router)
 app.include_router(predictions.router)
 app.include_router(recommendations.router)
 app.include_router(logs.router)
+app.include_router(anomalies.router)
 
 
 @app.get("/health")
