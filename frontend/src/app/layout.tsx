@@ -5,6 +5,7 @@ import { Toaster } from "react-hot-toast";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import Link from "next/link";
+import NotificationBanner from "@/components/NotificationBanner";
 
 export default function RootLayout({
   children,
@@ -43,6 +44,7 @@ export default function RootLayout({
               </div>
             </div>
           </nav>
+          <NotificationBanner />
           <main className="min-h-screen bg-slate-50 dark:bg-slate-950">
             {children}
           </main>
